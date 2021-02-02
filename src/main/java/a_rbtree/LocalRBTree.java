@@ -1,10 +1,23 @@
 package a_rbtree;
 
+/*
+1）每个结点要么是红的，要么是黑的。
+2）根结点是黑的。
+3）每个叶结点（叶结点即指树尾端NIL指针或NULL结点）是黑的。
+4）如果一个结点是红的，那么它的两个子节点都是黑的。
+5）对于任一结点而言，其到叶结点树尾端NIL指针的每一条路径都包含相同数目的黑结点。
+* */
+
+/**
+ *
+ */
+
 public class LocalRBTree<K extends Comparable<K>, V> {
     private static final boolean RED = true;
     private static final boolean BLACK = false;
 
     RBNode root;
+    int size;
 
     private RBNode parentOf(RBNode tar) {
         if (tar != null) {
@@ -39,16 +52,19 @@ public class LocalRBTree<K extends Comparable<K>, V> {
         }
     }
 
-    private void inOrderPrint(RBNode tar) {
-        if (tar != null) {
-            inOrderPrint(tar);
-            System.out.println("k:" + tar.key + " || v:" + tar.value);
-            inOrderPrint(tar);
+    private void orderPrint(RBNode tar) {
+        if (tar == null) {
+            return;
         }
+        orderPrint(tar.left);
+        System.out.println("k:" + tar.key + " || v:" + tar.value);
+        orderPrint(tar.right);
     }
 
-    public void inOrderPrint() {
-        inOrderPrint(this.root);
+    public void orderPrint() {
+        System.out.println("orderPrint");
+        orderPrint(this.root);
+        System.out.println("orderPrint");
     }
 
     public void insert(K key, V value) {
@@ -57,6 +73,7 @@ public class LocalRBTree<K extends Comparable<K>, V> {
         node.setValue(value);
         node.setColor(RED);
         insert(node);
+        size++;
     }
 
     private void insert(RBNode node) {
@@ -93,6 +110,7 @@ public class LocalRBTree<K extends Comparable<K>, V> {
 
         // 需要调用修复红黑树平衡的方法
         insertFixedUp(node);
+
     }
 
     private void insertFixedUp(RBNode node) {
@@ -120,14 +138,78 @@ public class LocalRBTree<K extends Comparable<K>, V> {
         this.root.setColor(BLACK);
         RBNode parent = parentOf(node);
         RBNode grandParent = parentOf(parent);
-        if (parent != null && isRed(parent)) {
+        if (isRed(parent)) {
+            //父点为红，一定有爷点
 
+            RBNode uncle = null;
+            if (parent == grandParent.left) {
+                //父点在左
+                uncle = grandParent.right;
+
+                //叔存 且红，情况4
+                if (isRed(uncle)) {
+                    setBlack(parent);
+                    setBlack(uncle);
+                    setRed(grandParent);
+                    insertFixedUp(grandParent);
+                    return;
+                }
+
+                if (uncle == null || isBlack(uncle)) {
+                    //情况5，LL双红
+                    if (node == parent.left) {
+                        setBlack(parent);
+                        setRed(grandParent);
+                        rightRotate(grandParent);
+                        return;
+                    }
+
+                    //情况6，LR双红
+                    if (node == parent.right) {
+                        leftRotate(parent);
+                        insertFixedUp(parent);
+                        return;
+                    }
+                }
+
+            } else {
+                //父点在右
+
+                uncle = grandParent.left;
+
+                //叔存 且红，情况4
+                if (isRed(uncle)) {
+                    setBlack(parent);
+                    setBlack(uncle);
+                    setRed(grandParent);
+                    insertFixedUp(grandParent);
+                    return;
+                }
+
+                if (uncle == null || isBlack(uncle)) {
+                    //情况8，RR双红
+                    if (node == parent.right) {
+                        setBlack(parent);
+                        setRed(grandParent);
+                        leftRotate(grandParent);
+                        return;
+                    }
+
+                    //情况7，RL双红
+                    if (node == parent.left) {
+                        rightRotate(parent);
+                        insertFixedUp(parent);
+                        return;
+                    }
+                }
+            }
         }
     }
 
 
     private void leftRotate(RBNode x) {
         /*
+        左旋意味着把 x向左下移动一位
          *       p                 p
          *       |                 |
          *       x                 y
@@ -166,6 +248,7 @@ public class LocalRBTree<K extends Comparable<K>, V> {
 
     private void rightRotate(RBNode y) {
         /*
+        左旋意味着把 y向右下移动
          *       p                 p
          *       |                 |
          *       y                 x
@@ -191,17 +274,46 @@ public class LocalRBTree<K extends Comparable<K>, V> {
                 y.parent.right = x;
             }
         } else {
-            //x原来是root，此时要把y更新为root
+            //y原来是root，此时要把x更新为root
             this.root = x;
             x.parent = null;
         }
 
         //将y的父点 更新为x，x的右子 指向y
         y.parent = x;
-        x.left = y;
+        x.right = y;
 
     }
 
+
+    void padding(String ch, int n) {
+        int i;
+        for (i = 0; i < n; i++) {
+            System.out.printf(ch);
+        }
+    }
+
+    void printNodes(RBNode node, int level) {
+        if (node == null) {
+            padding("\t", level);
+            System.out.println("NIL");
+        } else {
+            printNodes(node.right, level + 1);
+            padding("\t", level);
+            if (node.color == BLACK) {
+                System.out.printf("(%d)\n", node.key);
+            } else {
+                System.out.printf("[%d]\n", node.key);
+            }
+            printNodes(node.left, level + 1);
+        }
+    }
+
+    public void printTreeGraphics() {
+        System.out.printf("-------------------------------------------\n");
+        printNodes(this.root, 0);
+        System.out.printf("-------------------------------------------\n");
+    }
 
     static class RBNode<K extends Comparable<K>, V> {
         private RBNode parent;
