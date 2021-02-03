@@ -67,6 +67,8 @@ public class LocalRBTree<K extends Comparable<K>, V> {
         System.out.println("orderPrint");
     }
 
+//    =-===================================================================================================
+
     public void insert(K key, V value) {
         RBNode node = new RBNode();
         node.setKey(key);
@@ -285,7 +287,7 @@ public class LocalRBTree<K extends Comparable<K>, V> {
 
     }
 
-
+//==================================================================================
     void padding(String ch, int n) {
         int i;
         for (i = 0; i < n; i++) {
@@ -314,7 +316,7 @@ public class LocalRBTree<K extends Comparable<K>, V> {
         printNodes(this.root, 0);
         System.out.printf("-------------------------------------------\n");
     }
-
+//==========================================================================================
     static class RBNode<K extends Comparable<K>, V> {
         private RBNode parent;
         private RBNode left;
@@ -371,4 +373,5 @@ public class LocalRBTree<K extends Comparable<K>, V> {
             this.color = color;
         }
     }
+
 }
