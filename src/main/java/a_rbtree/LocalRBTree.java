@@ -6,7 +6,7 @@ package a_rbtree;
 3）每个叶结点（叶结点即指树尾端NIL指针或NULL结点）是黑的。
 4）如果一个结点是红的，那么它的两个子节点都是黑的。
 5）对于任一结点而言，其到叶结点树尾端NIL指针的每一条路径都包含相同数目的黑结点。
-* */
+*/
 
 /**
  *
@@ -288,21 +288,125 @@ public class LocalRBTree<K extends Comparable<K>, V> {
     }
 
 
-
-
-
-
-
 //==================================================================================
 
+/*
+删除非叶子节点时需要找替代节点来 替代
+包括前驱节点和后继节点，即 比自己小的，最大者；或者比自己大的最小者，也就是说大小顺序最接近的前后两点
+搜索方法是 左子一直右探寻找；右子一直左探寻找
 
 
 
+删除情况
+1，叶子节点，直接删除
+2，单孩子节点，子节点替代
+3，双子节点，找前驱或者后继来替代
+ */
 
 
+    private RBNode preDecessor(RBNode node) {
+        /*
+        本方法寻找前驱节点
+        如果有子节点，则按照 先左 后右探的方法
+        如果没有子节点，则向上寻找，寻找 第一个 是父亲右子点的 点位即可
+        即
+        5
+         \
+          7
+         / \
+        6   8
+
+        寻找6的前驱，是5
+        实际删除时 不会使用到该情况；但前驱节点的寻找是这个思路进行
+         */
+        if (node == null) {
+            return null;
+        } else if (node.left != null) {
+            RBNode p = node.left;
+            while (p.right != null) {
+                p = p.right;
+            }
+            return p;
+        } else {
+            RBNode p = node.parent;
+            RBNode ch = node;
+            while (p != null
+                    && ch == p.left) {
+                ch = p;
+                p = p.parent;
+            }
+            return p;
+        }
+    }
+
+    private RBNode successor(RBNode node) {
+        /*
+        本方法寻找后继节点
+         */
+        if (node == null) {
+            return null;
+        } else if (node.right != null) {
+            RBNode p = node.right;
+            while (p.left != null) {
+                p = p.left;
+            }
+            return p;
+        } else {
+            RBNode p = node.parent;
+            RBNode ch = node;
+            while (p != null
+                    && ch == p.right) {
+                ch = p;
+                p = p.parent;
+            }
+            return p;
+        }
+    }
 
 
-//==================================================================================
+    public V remove(K key) {
+        RBNode node = getNode(key);
+        if (node == null) {
+            return null;
+        }
+        V value = (V) node.value;
+        deleteNode(node);
+        size--;
+        return value;
+    }
+
+    private RBNode getNode(K key) {
+        if (key == null) {
+            return null;
+        }
+        RBNode node = this.root;
+        while (node != null) {
+            int cmp = key.compareTo((K) node.key);
+            if (cmp < 0) {
+                node = node.left;
+            } else if (cmp > 0) {
+                node = node.right;
+            } else {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    private void deleteNode(RBNode node) {
+        /*
+        为了减少 引用修改的次数，实际删除时没有移动 元素位置，而是直接交互 目标元素的 kv值，减少性能损耗
+
+         */
+
+
+        // 需要调用修复红黑树平衡的方法
+        insertFixedUp(node);
+
+    }
+
+
+    //==================================================================================
     void padding(String ch, int n) {
         int i;
         for (i = 0; i < n; i++) {
@@ -331,7 +435,8 @@ public class LocalRBTree<K extends Comparable<K>, V> {
         printNodes(this.root, 0);
         System.out.printf("-------------------------------------------\n");
     }
-//==========================================================================================
+
+    //==========================================================================================
     static class RBNode<K extends Comparable<K>, V> {
         private RBNode parent;
         private RBNode left;
