@@ -37,7 +37,7 @@ public class LocalRBTree<K extends Comparable<K>, V> {
         if (tar != null) {
             return tar.color == BLACK;
         }
-        return false;
+        return true;
     }
 
     private void setRed(RBNode tar) {
@@ -387,6 +387,8 @@ public class LocalRBTree<K extends Comparable<K>, V> {
             } else if (cmp > 0) {
                 node = node.right;
             } else {
+
+
                 return node;
             }
         }
@@ -396,12 +398,114 @@ public class LocalRBTree<K extends Comparable<K>, V> {
     private void deleteNode(RBNode node) {
         /*
         为了减少 引用修改的次数，实际删除时没有移动 元素位置，而是直接交互 目标元素的 kv值，减少性能损耗
-
          */
 
+        if (node.left != null && node.right != null) {
+            // 双子节点，找后继来替代; 交换 删除点与 后继点
+            RBNode successor = successor(node);
+            node.key = successor.key;
+            node.value = successor.value;
+            node = successor;
+        }
+        //后继节点 只能在对应234树的 叶子层，
+        //后继节点不可能有两个孩子，如果有2孩子的话，后继必然不是它
+        RBNode replaceMent = node.left != null ? node.left : node.right;
+
+        if (replaceMent != null) {
+            //单孩子节点，子节点替代
+            replaceMent.parent = node.parent;
+            if (node.parent == null) {
+                this.root = replaceMent;
+            } else if (node == node.parent.left) {
+                node.parent.left = replaceMent;
+            } else {
+                node.parent.right = replaceMent;
+            }
+            node.left = node.right = node.parent = null;
+            if (isBlack(node)) {
+                fixedAfterRemove(replaceMent);
+            }
+        } else if (node.parent == null) {
+            //删除点为root
+            this.root = null;
+        } else {
+            //删除目标为叶子节点
+            if (isBlack(node)) {
+                fixedAfterRemove(node);
+            }
+            if (node.parent != null) {
+                if (node == node.parent.left) {
+                    node.parent.left = null;
+                } else if (node == node.parent.right) {
+                    node.parent.right = null;
+                }
+                node.parent = null;
+            }
+        }
 
         // 需要调用修复红黑树平衡的方法
-        insertFixedUp(node);
+
+    }
+
+    private void fixedAfterRemove(RBNode node) {
+        while (node != this.root && isRed(node)) {
+            if (node == node.parent.left) {
+                RBNode bro = node.parent.right;
+
+                if (isRed(bro)) {
+                    bro.setColor(BLACK);
+                    bro.parent.setColor(RED);
+                    leftRotate(bro.parent);
+                    bro = node.parent.right;
+                }
+
+                if (isBlack(bro.right) && isBlack(bro.left)) {
+                    bro.setColor(RED);
+                    node = node.parent;
+
+                } else {
+                    if (isBlack(bro.right)) {
+                        bro.left.setColor(BLACK);
+                        bro.setColor(RED);
+                        rightRotate(bro);
+                        bro = node.parent.right;
+                    }
+                    bro.setColor(node.parent.color);
+                    node.parent.setColor(BLACK);
+                    bro.right.setColor(BLACK);
+                    leftRotate(node.parent);
+                    node = root;
+                }
+            } else {
+                RBNode bro = node.parent.left;
+
+                if (isRed(bro)) {
+                    bro.setColor(BLACK);
+                    bro.parent.setColor(RED);
+                    rightRotate(bro.parent);
+                    bro = node.parent.left;
+                }
+
+                if (isBlack(bro.right) && isBlack(bro.left)) {
+                    bro.setColor(RED);
+                    node = node.parent;
+
+                } else {
+                    if (isBlack(bro.left)) {
+                        bro.right.setColor(BLACK);
+                        bro.setColor(RED);
+                        leftRotate(bro);
+                        bro = node.parent.left;
+                    }
+                    bro.setColor(node.parent.color);
+                    node.parent.setColor(BLACK);
+                    bro.left.setColor(BLACK);
+                    rightRotate(node.parent);
+                    node = root;
+                }
+            }
+        }
+        node.setColor(BLACK);
 
     }
 
@@ -434,6 +538,85 @@ public class LocalRBTree<K extends Comparable<K>, V> {
         System.out.printf("-------------------------------------------\n");
         printNodes(this.root, 0);
         System.out.printf("-------------------------------------------\n");
+    }
+
+    public static int getTreeDepth(RBNode root) {
+        return root == null ? 0 : (1 + Math.max(getTreeDepth(root.left), getTreeDepth(root.right)));
+    }
+
+
+    private static void writeArray(RBNode currNode, int rowIndex, int columnIndex, String[][] res, int treeDepth) {
+        // 保证输入的树不为空
+        if (currNode == null) {
+            return;
+        }
+        // 先将当前节点保存到二维数组中
+        res[rowIndex][columnIndex] =
+                (currNode.isColor()?"\033[31m":"\033[37m")+
+                (currNode.key).toString();
+
+        // 计算当前位于树的第几层
+        int currLevel = ((rowIndex + 1) / 2);
+        // 若到了最后一层，则返回
+        if (currLevel == treeDepth) {
+            return;
+        }
+        // 计算当前行到下一行，每个元素之间的间隔（下一行的列索引与当前元素的列索引之间的间隔）
+        int gap = treeDepth - currLevel - 1;
+
+        // 对左儿子进行判断，若有左儿子，则记录相应的"/"与左儿子的值
+        if (currNode.left != null) {
+            res[rowIndex + 1][columnIndex - gap] = "/";
+            writeArray(currNode.left, rowIndex + 2, columnIndex - gap * 2, res, treeDepth);
+        }
+
+        // 对右儿子进行判断，若有右儿子，则记录相应的"\"与右儿子的值
+        if (currNode.right != null) {
+            res[rowIndex + 1][columnIndex + gap] = "\\";
+            writeArray(currNode.right, rowIndex + 2, columnIndex + gap * 2, res, treeDepth);
+        }
+    }
+
+
+    public void showTree() {
+        show(root);
+    }
+
+    public static void show(RBNode root) {
+        if (root == null) {
+            System.out.println("EMPTY!");
+        }
+        // 得到树的深度
+        int treeDepth = getTreeDepth(root);
+
+        // 最后一行的宽度为2的（n - 1）次方乘3，再加1
+        // 作为整个二维数组的宽度
+        int arrayHeight = treeDepth * 2 - 1;
+        int arrayWidth = (2 << (treeDepth - 2)) * 3 + 1;
+        // 用一个字符串数组来存储每个位置应显示的元素
+        String[][] res = new String[arrayHeight][arrayWidth];
+        // 对数组进行初始化，默认为一个空格
+        for (int i = 0; i < arrayHeight; i++) {
+            for (int j = 0; j < arrayWidth; j++) {
+                res[i][j] = " ";
+            }
+        }
+
+        // 从根节点开始，递归处理整个树
+        // res[0][(arrayWidth + 1)/ 2] = (char)(root.val + '0');
+        writeArray(root, 0, arrayWidth / 2, res, treeDepth);
+
+        // 此时，已经将所有需要显示的元素储存到了二维数组中，将其拼接并打印即可
+        for (String[] line : res) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < line.length; i++) {
+                sb.append(line[i]);
+                if (line[i].length() > 1 && i <= line.length - 1) {
+                    i += line[i].length() > 4 ? 2 : line[i].length() - 1;
+                }
+            }
+            System.out.println(sb.toString());
+        }
     }
 
     //==========================================================================================
