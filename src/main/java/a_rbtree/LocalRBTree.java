@@ -448,6 +448,8 @@ public class LocalRBTree<K extends Comparable<K>, V> {
     }
 
     private void fixedAfterRemove(RBNode node) {
+//        node是删除目标
+
         while (node != this.root && isRed(node)) {
             if (node == node.parent.left) {
                 RBNode bro = node.parent.right;
