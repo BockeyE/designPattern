@@ -29,14 +29,33 @@ package K_proxy.cglibProxy;
  */
 
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 public class Client {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws MalformedURLException {
+
+        System.out.println("d56dacbfd576490aae727c3ed9566a7f|||||".substring(0, 32));
+        URL u = new URL("http://local.com");
+        System.out.println(Integer.parseInt("-1"));
+
 //创建目标对象
         TeacherDao target = new TeacherDao();
 //获取到代理对象，并且将目标对象传递给代理对象
-        TeacherDao proxyInstance = (TeacherDao)new ProxyFactory(target).getProxyInstance();
+        TeacherDao proxyInstance = (TeacherDao) new ProxyFactory(target).getProxyInstance();
 
 //执行代理对象的方法，触发 intecept  方法，从而实现 对目标对象的调用
-        String res = proxyInstance.teach(); System.out.println("res=" + res);
+        String res = proxyInstance.teach();
+        System.out.println("res=" + res);
+        int[] x = {1, 3, 4, 5, 6};
+
+        System.out.println(x.length);
+        System.out.println(x.length - 2);
+        System.out.println(2 - 0);
+
+
     }
+
+
 }
+
